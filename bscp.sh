@@ -4,8 +4,9 @@
 #     Bob Brandt <projects@brandt.ie>
 #          
 
-LINK_SCRIPT=/usr/local/bin/bscp
-test -x $LINK_SCRIPT || sudo ln -s "$0" "$LINK_SCRIPT"
+_this_script=/opt/brandt/remote/bscp.sh
+_this_rc=/usr/local/bin/bscp
+test -x $_this_rc || sudo ln -sf "$_this_script" "$_this_rc"
 
 test -f "./bssh.conf" && BSSHCONF="./bssh.conf"
 test -f "/usr/bin/bssh.conf" && BSSHCONF="/usr/bin/bssh.conf"
