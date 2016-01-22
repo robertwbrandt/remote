@@ -1,0 +1,94 @@
+#!/bin/sh
+#
+#     Script creates and copies the necessary keys to allow for passwordless logins.
+#     Bob Brandt <projects@brandt.ie>
+#          
+#
+
+LINK_SCRIPT=/usr/local/bin/bssh-keys
+test -x $LINK_SCRIPT || sudo ln -sf "$0" "$LINK_SCRIPT"
+
+test -f "./bssh.conf" && BSSHCONF="./bssh.conf"
+test -f "/usr/bin/bssh.conf" && BSSHCONF="/usr/bin/bssh.conf"
+test -f "$HOME/.ssh/bssh.conf" && BSSHCONF="$HOME/.ssh/bssh.conf"
+test -f "$BSSHCONF" || ( echo "Unable to find $BSSHCONF file" ; exit 1 )
+
+. $BSSHCONF
+. /etc/rc.status
+
+create_keyfile() {
+	echo -e -n "Generating a $bits bit $encryption key file for SSH ($keyfile) "
+	test -e "$keyfile" && rm -rf "$keyfile" "$keyfile.pub"
+	ssh-keygen -q -b $bits -t $encryption -N "" -f "$keyfile"
+
+	rc_reset
+	test -e "$keyfile.pub"
+	rc_status -v
+	return $?
+}
+
+copy_publickey() {
+
+	cat "$idpubfile" | ssh "$user@$server" 'umask 077; test -d .ssh || mkdir .ssh ; cat >> .ssh/authorized_keys && echo "Copied public key to .ssh/authorized_keys" ; tmp=$? ; test -d /etc/dropbear && cat .ssh/authorized_keys >> /etc/dropbear/authorized_keys && echo "Copied public key to /etc/dropbear/authorized_keys" ; test -d /etc/ssh/keys-root && cat .ssh/authorized_keys >> /etc/ssh/keys-root/authorized_keys && echo "Copied public key to /etc/ssh/keys-root/authorized_keys"; exit $tmp'
+	tmp=$?
+
+	echo -e -n "Copying $encryption public key to $server ($user) "
+	test "$tmp" == "0"
+	rc_status -v
+	return $?
+}
+
+copy_netapppublickey() {
+#https://communities.netapp.com/thread/20809
+	cat "$idpubfile" | ssh "$user@$server" 'wrfile -a /etc/authorized_keys'
+	tmp=$?
+
+	echo -e -n "Copying $encryption public key to $server ($user) "
+	test "$tmp" == "0"
+	rc_status -v
+	return $?
+}
+
+
+remove_knownhost() {
+	echo -e -n "Removing $server's entry from $knownhostsfile "
+	rc_reset
+	if tmp=$( cut -d " " -f 1 "$knownhostsfile" | grep -i "$server" | head -n 1 )
+	then
+		grep -vi "^$tmp ssh-" "$knownhostsfile" > "$knownhostsfile.$$" && mv -f "$knownhostsfile.$$" "$knownhostsfile" && chmod 644 "$knownhostsfile"
+	fi
+	rc_status -v
+	return $?	
+}
+
+usage() {
+	echo "Usage: $0 {create|copy} Server [Username]"
+	exit ${1-0}
+}
+
+server="$2"
+user="${3-$defaultsshuser}"
+
+case "$1" in
+    create)
+	create_keyfile ;;
+    copy)
+	test -z "$server" && usage 1
+	test -e "$keyfile" || create_keyfile
+	test -e "$keyfile" && copy_publickey
+	;;
+    netapp)
+	test -z "$server" && usage 1
+	test -e "$keyfile" || create_keyfile
+	test -e "$keyfile" && copy_netapppublickey
+	;;
+    remove)
+	test -z "$server" && usage 1
+	remove_knownhost
+	;;
+    *)
+	usage 1 ;;
+esac
+
+rc_exit
+
