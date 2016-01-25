@@ -7,7 +7,7 @@ DEFAULTCONFIG=".remotedesktop"
 DEFAULTDOMAIN="opw-ad"
 DEFAULTLANG="en_GB"
 DEFAULTGEO="1280x1024"
-DEFAULTTITLE="- RemoteDesktop (by projects@brandt.ie)"
+DEFAULTTITLE="- bdesktop (by projects@brandt.ie)"
 DEFAULTDEPTH="16"
 VERSION=0.2
 
