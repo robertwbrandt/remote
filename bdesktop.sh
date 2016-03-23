@@ -4,7 +4,7 @@
 #     Bob Brandt <projects@brandt.ie>
 #  
 DEFAULTCONFIG=".remotedesktop"
-DEFAULTDOMAIN="opw-ad"
+DEFAULTDOMAIN="i"
 DEFAULTLANG="en_GB"
 DEFAULTGEO="1280x1024"
 DEFAULTTITLE="- bdesktop (by projects@brandt.ie)"
